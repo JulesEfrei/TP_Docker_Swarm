@@ -1,0 +1,75 @@
+services:
+  ghost-prod:
+    image: ghost:5-alpine
+    restart: always
+    ports:
+      - 2368:2368
+    environment:
+      database__client: mysql
+      database__connection__host: mysql
+      database__connection__user: root
+      database__connection__password: root
+      database__connection__database: ghost
+      url: http://localhost:2368
+      mail_transport: SMTP
+      mail__options_host: mailhog
+      mail__options_port: 1025
+    volumes:
+      - ghost_data:/var/lib/ghost/content
+    deploy:
+      replicas: 3
+      restart_policy:
+        condition: any
+      update_config:
+        parallelism: 2
+        delay: 10s
+    depends_on:
+      - mysql
+
+  mysql:
+    image: mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - mysql_data:/var/lib/mysql
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: any
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    ports:
+      - "1025:1025"
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: any
+
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - prometheus_data:/prometheus
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: any
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: any
+
+volumes:
+  ghost_data:
+  mysql_data:
+  prometheus_data:
+  grafana_data:
